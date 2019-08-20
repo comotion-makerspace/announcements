@@ -15,6 +15,9 @@ TRIGGER_AT_MINUTES = [
                       55,
                      ]
 
+TIME_FORMAT = "%m-%e-%y %H:%M"
+FILLER = "h h"
+
 LOG_LEVEL = logging.INFO
 LOG_FILENAME = 'closing_announcements.log'
 
@@ -35,7 +38,7 @@ logging.getLogger('schedule').setLevel(logging.WARNING)
 
 handler = colorlog.StreamHandler()
 handler.setFormatter(colorlog.ColoredFormatter(
-                    '%(log_color)s%(levelname)s:%(name)s:%(message)s'))
+    '%(log_color)s%(levelname)s:%(name)s:%(message)s'))
 logger = colorlog.getLogger()
 logger.addHandler(handler)
 
@@ -56,13 +59,13 @@ def get_opening_hours():
 def announce_closing(minutes):
     engine = pyttsx.init()
     if minutes == 0:
-        engine.say('Attention! CoMotion Makerspace is now closed.'
-                   'Unless authorized, please pack your belongings and exit.'
-                   'Thank you, and have a fantastic evening!')
-        logging.info('Announced MakerSpace closed')
+        engine.say('{} Attention! ... the makerspace is now closed.'
+                  'Unless authorized, please pack your belongings and exit.'
+                  'Thank you, and have a wonderful evening!'.format(FILLER))
+        logging.info('Announced MakerSpace closed @ {}'.format(datetime.datetime.strftime(TIME_FORMAT)))
     else:
         minutes_to_close = 60 - minutes
-        engine.say('Attention! CoMotion Makerspace will close in {} minutes.'.format(minutes_to_close))
+        engine.say('{} Attention! CoMotion Makerspace will close in {} minutes.'.format(FILLER, minutes_to_close))
         logging.info('Announced pre-closing time: {} minutes before'.format(minutes_to_close))
     engine.runAndWait()
 
@@ -71,35 +74,30 @@ def check_announcement_time():
     try:
         with open('data.pickle', 'rb') as f:
             data = pickle.load(f)
-    except (OSError, IOError):
-        print('could not find closing time data'
-              '\nnow running get_opening_hours')
-        get_opening_hours()
+    except (OSError, IOError) as e:
+        logging.error('could not find closing time data'
+                      '\n{}'.format(e))
     if data:
         current = datetime.datetime.now()
         today = datetime.datetime.isoweekday(current)
         for d in data:
             if d['dayOfWeek'] == today:
                 closing = datetime.datetime.strptime(d['untilTime'], '%H:%M')
-                # print('Closing @ {}:{}\nCurrent time is {}:{}'
-                #       .format(closing.hour, closing.minute,
-                #       current.hour, current.minute))
-                
-                # add edge case for first min of closing hour
                 if closing.hour - current.hour == 0 or \
                 (closing.hour + 1 - current.hour == 0 and current.minute == 0):
                     if current.minute in TRIGGER_AT_MINUTES or current.minute == 0:
                         announce_closing(current.minute)
 
-def once():
-    logging.info('running once time is {}'.format(time.strftime("%m-%d-%Y @ %H:%M%p")))
-    engine = pyttsx.init()
-    engine.say('Announcements are now active!')
-    engine.runAndWait()
-once()
-
 schedule.every().day.at('03:00').do(get_opening_hours)
 schedule.every().minute.at(':00').do(check_announcement_time)
+
+def run_once():
+    logging.info('Program started. Time is {}'.format(time.strftime(TIME_FORMAT)))
+    get_opening_hours()
+    engine = pyttsx.init()
+    engine.say('{} closing announcements are now running'.format(FILLER))
+    engine.runAndWait()
+run_once()
 
 while True:
     schedule.run_pending()

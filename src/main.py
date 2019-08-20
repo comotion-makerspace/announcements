@@ -16,10 +16,11 @@ TRIGGER_AT_MINUTES = [
                      ]
 
 TIME_FORMAT = "%m-%e-%y %H:%M"
-FILLER = "fill..."
+FILLER = "filler..."
 FILE_PREFIX="announcements"
 BEGIN_FILE_PREFIX="begin"
 AUDIO_PLAYER="mpg123"
+NOTIFICATION_SOUND="doorbell.mp3"
 
 LOG_LEVEL = logging.INFO
 LOG_FILENAME = 'closing_announcements.log'
@@ -64,13 +65,13 @@ def get_speech_snippets():
         minutes_to_close = 60 - minutes
         f="{}-{}.mp3".format(FILE_PREFIX, str(minutes_to_close))
         if not os.path.isfile(f):
-            tts = gTTS('{} Attention! CoMotion Makerspace will close in {} minutes.'.format(FILLER, minutes_to_close),
+            tts = gTTS('{} Attention! The Makerspace will close in {} minutes.'.format(FILLER, minutes_to_close),
                     lang='en')
             tts.save(f)
     f= "{}-{}.mp3".format(FILE_PREFIX, "0")
     if not os.path.isfile(f):
-        tts = gTTS('{} Attention! ... the makerspace is now closed.'
-                    'Unless authorized, please pack your belongings and exit.'
+        tts = gTTS('{} Attention! The makerspace is now closed. '
+                    'Unless authorized, please pack your belongings and exit. '
                     'Thank you, have a wonderful evening!'.format(FILLER))
         tts.save(f)
     f= "{}-{}.mp3".format(FILE_PREFIX, BEGIN_FILE_PREFIX)
@@ -85,6 +86,7 @@ def announce_closing(minutes):
     else:
         minutes_to_close = 60 - minutes
         logging.info('Announced pre-closing time: {} minutes before'.format(minutes_to_close))
+    os.system('{} {}'.format(AUDIO_PLAYER, NOTIFICATION_SOUND))
     os.system('{} {}-{}.mp3'.format(AUDIO_PLAYER, FILE_PREFIX, str(minutes_to_close)))
 
 def check_announcement_time():
@@ -113,7 +115,8 @@ def run_once():
     logging.info('Program started. Time is {}'.format(time.strftime(TIME_FORMAT)))
     get_opening_hours()
     get_speech_snippets()
-    os.system('{} {}-{}.mp3'.format(AUDIO_PLAYER, FILE_PREFIX, BEGIN_FILE_PREFIX)) # TODO:
+    os.system('{} {}'.format(AUDIO_PLAYER, NOTIFICATION_SOUND))
+    os.system('{} {}-{}.mp3'.format(AUDIO_PLAYER, FILE_PREFIX, BEGIN_FILE_PREFIX))
 run_once()
 
 while True:

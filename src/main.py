@@ -16,7 +16,7 @@ TRIGGER_AT_MINUTES = [
                      ]
 
 TIME_FORMAT = "%m-%e-%y %H:%M"
-FILLER = "filler..."
+FILLER = "" # now unnecessary
 FILE_PREFIX="announcements"
 BEGIN_FILE_PREFIX="begin"
 AUDIO_PLAYER="mpg123"
@@ -82,7 +82,7 @@ def get_speech_snippets():
 def announce_closing(minutes):
     if minutes == 0:
         minutes_to_close = 0
-        logging.info('Announced MakerSpace closed @ {}'.format(datetime.datetime.strftime(TIME_FORMAT)))
+        logging.info('Announced MakerSpace closed @ {}'.format(time.strftime(TIME_FORMAT)))
     else:
         minutes_to_close = 60 - minutes
         logging.info('Announced pre-closing time: {} minutes before'.format(minutes_to_close))

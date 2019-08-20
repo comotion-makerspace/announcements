@@ -1,6 +1,5 @@
 import requests
 import schedule
-import pyttsx3 as pyttsx
 import colorlog
 import time
 import os
@@ -8,6 +7,7 @@ import pickle
 import json
 import datetime
 import logging
+from gtts import gTTS
 
 TRIGGER_AT_MINUTES = [
                       30,
@@ -16,7 +16,10 @@ TRIGGER_AT_MINUTES = [
                      ]
 
 TIME_FORMAT = "%m-%e-%y %H:%M"
-FILLER = "h h"
+FILLER = "fill..."
+FILE_PREFIX="announcements"
+BEGIN_FILE_PREFIX="begin"
+AUDIO_PLAYER="mpg123"
 
 LOG_LEVEL = logging.INFO
 LOG_FILENAME = 'closing_announcements.log'
@@ -56,18 +59,33 @@ def get_opening_hours():
     else:
         logging.warning('Unable to fetch opening hours')
 
+def get_speech_snippets():
+    for minutes in TRIGGER_AT_MINUTES:
+        minutes_to_close = 60 - minutes
+        f="{}-{}.mp3".format(FILE_PREFIX, str(minutes_to_close))
+        if not os.path.isfile(f):
+            tts = gTTS('{} Attention! CoMotion Makerspace will close in {} minutes.'.format(FILLER, minutes_to_close),
+                    lang='en')
+            tts.save(f)
+    f= "{}-{}.mp3".format(FILE_PREFIX, "0")
+    if not os.path.isfile(f):
+        tts = gTTS('{} Attention! ... the makerspace is now closed.'
+                    'Unless authorized, please pack your belongings and exit.'
+                    'Thank you, have a wonderful evening!'.format(FILLER))
+        tts.save(f)
+    f= "{}-{}.mp3".format(FILE_PREFIX, BEGIN_FILE_PREFIX)
+    if not os.path.isfile(f):
+        tts= gTTS('{} closing announcements are now running'.format(FILLER))
+        tts.save(f)
+
 def announce_closing(minutes):
-    engine = pyttsx.init()
     if minutes == 0:
-        engine.say('{} Attention! ... the makerspace is now closed.'
-                  'Unless authorized, please pack your belongings and exit.'
-                  'Thank you, and have a wonderful evening!'.format(FILLER))
+        minutes_to_close = 0
         logging.info('Announced MakerSpace closed @ {}'.format(datetime.datetime.strftime(TIME_FORMAT)))
     else:
         minutes_to_close = 60 - minutes
-        engine.say('{} Attention! CoMotion Makerspace will close in {} minutes.'.format(FILLER, minutes_to_close))
         logging.info('Announced pre-closing time: {} minutes before'.format(minutes_to_close))
-    engine.runAndWait()
+    os.system('{} {}-{}.mp3'.format(AUDIO_PLAYER, FILE_PREFIX, str(minutes_to_close)))
 
 def check_announcement_time():
     data = None
@@ -94,9 +112,8 @@ schedule.every().minute.at(':00').do(check_announcement_time)
 def run_once():
     logging.info('Program started. Time is {}'.format(time.strftime(TIME_FORMAT)))
     get_opening_hours()
-    engine = pyttsx.init()
-    engine.say('{} closing announcements are now running'.format(FILLER))
-    engine.runAndWait()
+    get_speech_snippets()
+    os.system('{} {}-{}.mp3'.format(AUDIO_PLAYER, FILE_PREFIX, BEGIN_FILE_PREFIX)) # TODO:
 run_once()
 
 while True:

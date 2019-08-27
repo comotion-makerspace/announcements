@@ -9,7 +9,7 @@ import datetime
 import logging
 from gtts import gTTS
 
-TRIGGER_AT_MINUTES = [
+TRIGGER_AT_MINUTES_BEFORE_CLOSE = [
                       15
                       30,
                       45,
@@ -63,7 +63,7 @@ def get_opening_hours():
         logging.warning('Unable to fetch opening hours')
 
 def get_speech_snippets():
-    for minutes in TRIGGER_AT_MINUTES:
+    for minutes in TRIGGER_AT_MINUTES_BEFORE_CLOSE:
         minutes_to_close = 60 - minutes
         f="{}-{}.mp3".format(FILE_PREFIX, str(minutes_to_close))
         if not os.path.isfile(f):
@@ -105,9 +105,9 @@ def check_announcement_time():
         for d in data:
             if d['dayOfWeek'] == today:
                 closing = datetime.datetime.strptime(d['untilTime'], '%H:%M')
-                if closing.hour - current.hour == 0 or \
-                (closing.hour + 1 - current.hour == 0 and current.minute == 0):
-                    if current.minute in TRIGGER_AT_MINUTES or current.minute == 0:
+                if closing.hour - (current.hour + 1) == 0 or \
+                closing.hour - current.hour == 0 and current.minute == 0:
+                    if current.minute in TRIGGER_AT_MINUTES_BEFORE_CLOSE or current.minute == 0:
                         announce_closing(current.minute)
 
 schedule.every().day.at('03:00').do(get_opening_hours)

@@ -136,9 +136,6 @@ def run_once():
     logging.info('Program started. Time is {}'.format(time.strftime(TIME_FORMAT)))
     get_opening_hours()
     get_speech_snippets()
-    for i in range(0, 3):
-        os.system('{} {}'.format(AUDIO_PLAYER, NOTIFICATION_SOUND))
-        os.system('{} {}-{}.mp3'.format(AUDIO_PLAYER, FILE_PREFIX, BEGIN_FILE_PREFIX))
 run_once()
 
 while True:
